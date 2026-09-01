@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${DB_NAME:-jitsi_admin}
+      MYSQL_USER: ${DB_USER:-jitsi_admin}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-jitsi_admin_password}
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # Admin Panel Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    environment:
+      # Database connection (MySQL)
+      DATABASE_URL: mysql://${DB_USER:-jitsi_admin}:${DB_PASSWORD:-jitsi_admin_password}@db:3306/${DB_NAME:-jitsi_admin}
+      
+      # NextAuth
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      
+      # Jitsi Configuration
+      JITSI_DEPLOYMENT_MODE: ${JITSI_DEPLOYMENT_MODE:-remote}
+      JITSI_WEBHOOK_SECRET: ${JITSI_WEBHOOK_SECRET}
+      
+      # SMTP
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SMTP_FROM: ${SMTP_FROM}
+      
+      # Jibri
+      JIBRI_ENABLED: ${JIBRI_ENABLED:-false}
+      JIBRI_API_URL: ${JIBRI_API_URL}
+      JIBRI_STORAGE_PATH: ${JIBRI_STORAGE_PATH}
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  mysql_data:

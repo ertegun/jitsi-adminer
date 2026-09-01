@@ -1,0 +1,185 @@
+// Prisma schema for Jitsi Admin Panel
+// Supports both SQLite (dev) and MySQL (prod) with minimal changes
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// MULTI-TENANT CORE MODELS
+// ============================================
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+
+  // Jitsi server connection settings (per-org, not global)
+  jitsiDomain           String?
+  jitsiAppId            String?
+  jitsiAppSecret        String? // encrypted/hashed in production
+  jitsiConnectionStatus String  @default("NOT_CONNECTED") // NOT_CONNECTED, PENDING, CONNECTED
+  jitsiLastTestedAt     DateTime? // Last connection test time
+
+  // Quota settings (prepared for future use)
+  monthlyMinuteQuota Int?    // nullable, null = unlimited
+  quotaMetric        String  @default("PARTICIPANT_MINUTES") // MEETING_DURATION | PARTICIPANT_MINUTES
+
+  // Relations
+  license            License?
+  members            OrganizationMember[]
+  apiKeys            ApiKey[]
+  meetings           Meeting[]
+  auditLogs          AuditLog[]
+}
+
+model License {
+  id             String    @id @default(cuid())
+  organizationId String    @unique
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  licenseKey        String
+  status            String    @default("PENDING") // PENDING, ACTIVE, INVALID, EXPIRED
+  lastValidatedAt   DateTime?
+  expiresAt         DateTime?
+  validationSource  String    @default("MOCK") // MOCK | REMOTE
+  createdAt         DateTime  @default(now())
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  isSuperAdmin Boolean  @default(false) // System-wide admin access
+  createdAt    DateTime @default(now())
+
+  // Relations
+  organizations  OrganizationMember[]
+  createdMeetings Meeting[]
+  apiKeysCreated ApiKey[]
+  auditLogs      AuditLog[]
+}
+
+model OrganizationMember {
+  id             String   @id @default(cuid())
+  userId         String
+  organizationId String
+  role           String   // OWNER, ADMIN, HOST, VIEWER
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+}
+
+model ApiKey {
+  id             String    @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  name        String
+  keyHash     String   @unique // hashed API secret
+  createdBy   String
+  creator     User     @relation(fields: [createdBy], references: [id])
+  lastUsedAt  DateTime?
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+}
+
+// ============================================
+// MEETING MODELS
+// ============================================
+
+model Meeting {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  roomName       String   @unique // unique slug for the room
+  title          String
+  createdByUserId String
+  createdBy      User     @relation(fields: [createdByUserId], references: [id])
+
+  scheduledStart DateTime
+  scheduledEnd   DateTime?
+
+  status String @default("SCHEDULED") // SCHEDULED, LIVE, ENDED, CANCELLED
+
+  // Meeting features
+  lobbyEnabled  Boolean @default(false)
+  recordingEnabled Boolean @default(false)
+  participantRoleMode String @default("HOST_GUEST") // HOST_GUEST | EVERYONE_MODERATOR
+
+  // Recurring meetings
+  recurringGroupId String? // groups related recurring meetings
+
+  // Advanced settings (JSON blob)
+  advancedSettings String @default("{}") // JSON: features + config overrides
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  invitees     MeetingInvitee[]
+  participants MeetingParticipant[]
+  sessions     MeetingSession[]
+}
+
+model MeetingInvitee {
+  id          String    @id @default(cuid())
+  meetingId   String
+  meeting     Meeting   @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  email       String
+  status      String    @default("PENDING") // PENDING, ACCEPTED, DECLINED
+  respondedAt DateTime?
+  createdAt   DateTime  @default(now())
+}
+
+model MeetingParticipant {
+  id              String   @id @default(cuid())
+  meetingId       String
+  meeting         Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  displayName     String
+  jid             String? // Jitsi ID from webhook
+  joinedAt        DateTime
+  leftAt          DateTime?
+  durationSeconds Int?     // calculated from joinedAt - leftAt
+}
+
+model MeetingSession {
+  id                  String   @id @default(cuid())
+  meetingId           String
+  meeting             Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  actualStart         DateTime
+  actualEnd           DateTime?
+  totalDurationSeconds Int?    // calculated when session ends
+}
+
+// ============================================
+// AUDIT LOG
+// ============================================
+
+model AuditLog {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  action     String // e.g., "MEETING_CREATED", "API_KEY_REVOKED", "USER_INVITED"
+  targetType String // e.g., "Meeting", "ApiKey", "User"
+  targetId   String
+
+  metadata   String   @default("{}") // JSON blob for additional context
+  createdAt  DateTime @default(now())
+}

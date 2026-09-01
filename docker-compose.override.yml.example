@@ -1,0 +1,16 @@
+# docker-compose.override.yml.example
+# Copy this to docker-compose.override.yml for local development with hot-reload
+
+version: '3.8'
+
+services:
+  app:
+    build:
+      target: deps  # Use deps stage for development
+    command: npm run dev
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      - NODE_ENV=development

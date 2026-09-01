@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jitsi Admin Theme Test</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            background: 'oklch(0.98 0 0)',
+            foreground: 'oklch(0.15 0.01 260)',
+            card: 'oklch(1 0 0)',
+            'card-foreground': 'oklch(0.15 0.01 260)',
+            primary: 'oklch(0.52 0.195 264)',
+            'primary-foreground': 'oklch(0.99 0 0)',
+            secondary: 'oklch(0.94 0.01 260)',
+            'secondary-foreground': 'oklch(0.15 0.01 260)',
+            muted: 'oklch(0.96 0.005 260)',
+            'muted-foreground': 'oklch(0.48 0.01 260)',
+            accent: 'oklch(0.92 0.02 264)',
+            'accent-foreground': 'oklch(0.15 0.01 260)',
+            destructive: 'oklch(0.577 0.245 27.325)',
+            border: 'oklch(0.89 0.005 260)',
+            input: 'oklch(0.91 0.005 260)',
+            ring: 'oklch(0.52 0.195 264)',
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="min-h-screen flex items-center justify-center" style="background: linear-gradient(135deg, oklch(0.98 0 0) 0%, oklch(0.94 0.01 260) 50%, oklch(0.92 0.02 264) 100%);">
+  
+  <div class="w-full max-w-md p-8 rounded-xl shadow-2xl" style="background-color: oklch(1 0 0);">
+    <!-- Header -->
+    <div class="text-center mb-6">
+      <div class="mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-3" style="background-color: oklch(0.52 0.195 264);">
+        <span class="iconify text-5xl" data-icon="mdi:video-account" style="color: oklch(0.99 0 0);"></span>
+      </div>
+      <h1 class="text-3xl font-bold mb-2" style="color: oklch(0.15 0.01 260);">Giriş Yap</h1>
+      <p class="text-sm" style="color: oklch(0.48 0.01 260);">Jitsi Admin Panel</p>
+    </div>
+
+    <!-- Error Alert -->
+    <div class="mb-4 px-4 py-3 rounded-lg flex items-center gap-2 border" style="background-color: oklch(0.577 0.245 27.325 / 0.1); border-color: oklch(0.577 0.245 27.325 / 0.3); color: oklch(0.577 0.245 27.325);">
+      <span class="iconify" data-icon="mdi:alert-circle"></span>
+      <span class="text-sm">Örnek hata mesajı</span>
+    </div>
+
+    <!-- Form -->
+    <form class="space-y-4">
+      <!-- Email Input -->
+      <div class="space-y-2">
+        <label for="email" class="block text-sm font-medium" style="color: oklch(0.15 0.01 260);">E-posta</label>
+        <div class="relative">
+          <span class="iconify absolute left-3 top-1/2 -translate-y-1/2" data-icon="mdi:email-outline" style="color: oklch(0.48 0.01 260);"></span>
+          <input 
+            type="email" 
+            id="email" 
+            placeholder="ornek@email.com"
+            class="w-full pl-10 pr-3 py-2 rounded-lg border transition-colors outline-none focus:ring-3"
+            style="background-color: transparent; border-color: oklch(0.91 0.005 260); color: oklch(0.15 0.01 260);"
+          >
+        </div>
+      </div>
+
+      <!-- Password Input -->
+      <div class="space-y-2">
+        <label for="password" class="block text-sm font-medium" style="color: oklch(0.15 0.01 260);">Şifre</label>
+        <div class="relative">
+          <span class="iconify absolute left-3 top-1/2 -translate-y-1/2" data-icon="mdi:lock-outline" style="color: oklch(0.48 0.01 260);"></span>
+          <input 
+            type="password" 
+            id="password" 
+            placeholder="••••••••"
+            class="w-full pl-10 pr-3 py-2 rounded-lg border transition-colors outline-none focus:ring-3"
+            style="background-color: transparent; border-color: oklch(0.91 0.005 260); color: oklch(0.15 0.01 260);"
+          >
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <button 
+        type="submit"
+        class="w-full py-2 px-4 rounded-lg font-medium flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-lg"
+        style="background-color: oklch(0.52 0.195 264); color: oklch(0.99 0 0);"
+      >
+        <span class="iconify" data-icon="mdi:login"></span>
+        Giriş Yap
+      </button>
+
+      <!-- Footer Link -->
+      <div class="text-center text-sm">
+        <span style="color: oklch(0.48 0.01 260);">Hesabınız yok mu?</span>
+        <a href="#" class="font-medium hover:underline ml-1" style="color: oklch(0.52 0.195 264);">Kayıt Ol</a>
+      </div>
+    </form>
+  </div>
+
+  <style>
+    input::placeholder {
+      color: oklch(0.48 0.01 260);
+      opacity: 0.6;
+    }
+    
+    input:focus {
+      border-color: oklch(0.52 0.195 264);
+      box-shadow: 0 0 0 3px oklch(0.52 0.195 264 / 0.1);
+    }
+  </style>
+
+</body>
+</html>
