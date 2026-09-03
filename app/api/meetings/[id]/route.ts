@@ -56,6 +56,8 @@ export async function GET(
     // Add lobby config if enabled
     if (advancedSettings && meeting.lobbyEnabled) {
       advancedSettings.config['lobby.enabled'] = true
+      // Require moderator to manually approve each guest (no auto-admit)
+      advancedSettings.config['lobby.autoKnock'] = false
     }
 
     // Generate meeting links if Jitsi is connected

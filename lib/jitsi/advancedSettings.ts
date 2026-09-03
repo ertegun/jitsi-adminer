@@ -27,6 +27,8 @@ export interface AdvancedMeetingSettings {
     e2eeEnabled: boolean
     // Lobby - enable waiting room for non-moderators
     'lobby.enabled'?: boolean
+    // Lobby auto-knock: false = moderator must manually approve each guest
+    'lobby.autoKnock'?: boolean
   }
 }
 
