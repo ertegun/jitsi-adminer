@@ -81,7 +81,6 @@ export async function GET(
             scheduledEnd: meeting.scheduledEnd,
           },
           advancedSettings,
-          lobbyEnabled: meeting.lobbyEnabled, // JWT'de lobby control
         })
 
         hostLink = buildMeetingUrl({
@@ -92,26 +91,13 @@ export async function GET(
         })
 
         // Guest link (if HOST_GUEST mode).
-        // With token_lobby_ondemand plugin, we control lobby via JWT context.user.lobby flag
+        // Guest links are ANONYMOUS (no JWT) so Prosody's lobby works properly.
+        // With ENABLE_GUESTS=1, anonymous users wait for authenticated moderator.
         if (meeting.participantRoleMode === 'HOST_GUEST') {
-          const guestToken = generateJitsiToken({
-            jitsiDomain: org.jitsiDomain,
-            jitsiAppId: org.jitsiAppId,
-            jitsiAppSecret: org.jitsiAppSecret,
-            roomName: meeting.roomName,
-            isModerator: false,
-            meeting: {
-              scheduledStart: meeting.scheduledStart,
-              scheduledEnd: meeting.scheduledEnd,
-            },
-            advancedSettings,
-            lobbyEnabled: meeting.lobbyEnabled, // JWT'de lobby control
-          })
-
           guestLink = buildMeetingUrl({
             jitsiDomain: org.jitsiDomain,
             roomName: meeting.roomName,
-            jwt: guestToken, // Guest now has JWT with lobby flag
+            // NO JWT - completely anonymous guest
             advancedSettings,
           })
         }
