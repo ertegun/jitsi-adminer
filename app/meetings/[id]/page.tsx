@@ -1,10 +1,60 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Icon } from '@iconify/react'
 import { useToast } from '@/hooks/use-toast'
 import { ClientLayoutWrapper } from '@/components/ClientLayoutWrapper'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+
+type MeetingParticipant = {
+  id: string
+  displayName: string
+  joinedAt: string
+  durationSeconds?: number | null
+}
+
+type MeetingSession = {
+  id: string
+  actualStart: string
+  actualEnd?: string | null
+  totalDurationSeconds?: number | null
+}
+
+type MeetingDetail = {
+  id: string
+  title: string
+  roomName: string
+  status: string
+  scheduledStart: string
+  scheduledEnd?: string | null
+  lobbyEnabled: boolean
+  recordingEnabled: boolean
+  participantRoleMode: string
+  createdBy: {
+    name?: string | null
+    email?: string | null
+  }
+  participants: MeetingParticipant[]
+  sessions: MeetingSession[]
+}
+
+type MeetingDetailResponse = {
+  meeting: MeetingDetail
+  hostLink: string | null
+  guestLink: string | null
+}
 
 export default function MeetingDetailPage({
   params,
@@ -14,7 +64,7 @@ export default function MeetingDetailPage({
   const router = useRouter()
   const { toast } = useToast()
   const [loading, setLoading] = useState(true)
-  const [data, setData] = useState<any>(null)
+  const [data, setData] = useState<MeetingDetailResponse | null>(null)
   const [error, setError] = useState('')
   const [meetingId, setMeetingId] = useState<string | null>(null)
 
@@ -24,18 +74,12 @@ export default function MeetingDetailPage({
     })
   }, [params])
 
-  useEffect(() => {
-    if (meetingId) {
-      fetchData()
-    }
-  }, [meetingId])
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!meetingId) return
     try {
       const response = await fetch(`/api/meetings/${meetingId}`)
-      const result = await response.json()
-      
+      const result: MeetingDetailResponse = await response.json()
+
       if (!response.ok) {
         if (response.status === 401) {
           router.push('/auth/signin')
@@ -45,17 +89,24 @@ export default function MeetingDetailPage({
           router.push('/meetings')
           return
         }
-        setError(result.error || 'Veri yüklenemedi')
+        setError((result as { error?: string }).error || 'Veri yüklenemedi')
         return
       }
 
       setData(result)
-    } catch (err) {
+    } catch {
       setError('Bir hata oluştu')
     } finally {
       setLoading(false)
     }
-  }
+  }, [meetingId, router])
+
+  useEffect(() => {
+    if (meetingId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      fetchData()
+    }
+  }, [meetingId, fetchData])
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)
@@ -85,7 +136,8 @@ export default function MeetingDetailPage({
   const { meeting, hostLink, guestLink } = data
 
   return (
-    <div className="min-h-screen bg-background">
+    <ClientLayoutWrapper>
+      <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="bg-card shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -93,9 +145,9 @@ export default function MeetingDetailPage({
             <h1 className="text-2xl font-bold text-foreground">
               {meeting.title}
             </h1>
-            <a href="/meetings" className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">
+            <Link href="/meetings" className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">
               <Icon icon="mdi:arrow-left" className="w-4 h-4" /> Toplantılara Dön
-            </a>
+            </Link>
           </div>
         </div>
       </header>
@@ -246,9 +298,9 @@ export default function MeetingDetailPage({
                 <Icon icon="mdi:alert" className="w-5 h-5 text-chart-2 flex-shrink-0 mt-0.5" />
                 <p className="text-sm text-chart-2">
                   Jitsi sunucu bağlantısı yok. Toplantı linkleri üretilemedi.{' '}
-                  <a href="/settings/jitsi" className="underline">
+                  <Link href="/settings/jitsi" className="underline">
                     Jitsi sunucusu bağlayın
-                  </a>
+                  </Link>
                 </p>
               </div>
             )}
@@ -261,7 +313,7 @@ export default function MeetingDetailPage({
 
               {meeting.participants.length > 0 ? (
                 <div className="divide-y">
-                  {meeting.participants.map((participant: any) => (
+                  {meeting.participants.map((participant: MeetingParticipant) => (
                     <div key={participant.id} className="py-3 flex justify-between">
                       <div>
                         <p className="text-sm font-medium text-foreground">
@@ -297,7 +349,7 @@ export default function MeetingDetailPage({
 
               {meeting.sessions.length > 0 ? (
                 <div className="space-y-3">
-                  {meeting.sessions.map((session: any) => (
+                  {meeting.sessions.map((session: MeetingSession) => (
                     <div key={session.id} className="text-sm">
                       <p className="font-medium text-foreground">
                         {new Date(session.actualStart).toLocaleString('tr-TR')}
@@ -338,26 +390,45 @@ export default function MeetingDetailPage({
                   </a>
                 )}
 
-                <button
-                  onClick={() => {
-                    if (confirm('Toplantıyı iptal etmek istediğinizden emin misiniz?')) {
-                      // TODO: Cancel meeting API
-                      toast({
-                        title: "ℹ Bilgi",
-                        description: "İptal fonksiyonu yakında eklenecek",
-                        duration: 3000,
-                      })
-                    }
-                  }}
-                  className="block w-full px-4 py-2 border border-red-300 text-destructive text-center rounded hover:bg-destructive/10 flex items-center justify-center gap-2"
-                >
-                  <Icon icon="mdi:close-circle" className="w-5 h-5" /> Toplantıyı İptal Et
-                </button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <button
+                      className="block w-full px-4 py-2 border border-red-300 text-destructive text-center rounded hover:bg-destructive/10 flex items-center justify-center gap-2"
+                    >
+                      <Icon icon="mdi:close-circle" className="w-5 h-5" /> Toplantıyı İptal Et
+                    </button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Toplantıyı İptal Et</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Toplantıyı iptal etmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Vazgeç</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => {
+                          // TODO: Cancel meeting API
+                          toast({
+                            title: "ℹ Bilgi",
+                            description: "İptal fonksiyonu yakında eklenecek",
+                            duration: 3000,
+                          })
+                        }}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        İptal Et
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </div>
           </div>
         </div>
       </main>
-    </div>
+      </div>
+    </ClientLayoutWrapper>
   )
 }
