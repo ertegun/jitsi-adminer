@@ -254,7 +254,7 @@ export default function MeetingDetailPage({
 
               {meeting.participants.length > 0 ? (
                 <div className="divide-y">
-                  {meeting.participants.map((participant) => (
+                  {meeting.participants.map((participant: any) => (
                     <div key={participant.id} className="py-3 flex justify-between">
                       <div>
                         <p className="text-sm font-medium text-foreground">
@@ -290,7 +290,7 @@ export default function MeetingDetailPage({
 
               {meeting.sessions.length > 0 ? (
                 <div className="space-y-3">
-                  {meeting.sessions.map((session) => (
+                  {meeting.sessions.map((session: any) => (
                     <div key={session.id} className="text-sm">
                       <p className="font-medium text-foreground">
                         {new Date(session.actualStart).toLocaleString('tr-TR')}

@@ -53,6 +53,11 @@ export async function GET(
       ? mergeAdvancedSettings(JSON.parse(meeting.advancedSettings))
       : undefined
 
+    // Add lobby config if enabled
+    if (advancedSettings && meeting.lobbyEnabled) {
+      advancedSettings.config['lobby.enabled'] = true
+    }
+
     // Generate meeting links if Jitsi is connected
     let hostLink = null
     let guestLink = null
@@ -87,25 +92,16 @@ export async function GET(
           advancedSettings,
         })
 
-        // Guest link (if HOST_GUEST mode)
+        // Guest link (if HOST_GUEST mode). 
+        // For lobby to work properly with Prosody + JWT auth, guest links must
+        // be COMPLETELY ANONYMOUS (no JWT token at all). JWT-authenticated users
+        // bypass the lobby regardless of affiliation. Only anonymous users are
+        // held in the lobby waiting for a moderator.
         if (meeting.participantRoleMode === 'HOST_GUEST') {
-          const guestToken = generateJitsiToken({
-            jitsiDomain: org.jitsiDomain,
-            jitsiAppId: org.jitsiAppId,
-            jitsiAppSecret: org.jitsiAppSecret,
-            roomName: meeting.roomName,
-            isModerator: false,
-            meeting: {
-              scheduledStart: meeting.scheduledStart,
-              scheduledEnd: meeting.scheduledEnd,
-            },
-            advancedSettings,
-          })
-
           guestLink = buildMeetingUrl({
             jitsiDomain: org.jitsiDomain,
             roomName: meeting.roomName,
-            jwt: guestToken,
+            // NO jwt parameter - guests are anonymous
             advancedSettings,
           })
         }

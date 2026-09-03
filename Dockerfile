@@ -4,8 +4,9 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 
-# Copy package files
+# Copy package files and Prisma schema (needed for postinstall's `prisma generate`)
 COPY package.json package-lock.json* ./
+COPY prisma ./prisma
 RUN npm ci --legacy-peer-deps
 
 # Stage 2: Builder
@@ -39,10 +40,16 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Copy Prisma files for migrations
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+# Replace standalone's pruned node_modules with the full tree from the builder,
+# pinned to the version used at build time. The Prisma CLI (needed below by
+# docker-entrypoint.sh for `prisma migrate deploy`) has many transitive deps
+# (@prisma/config, effect, etc.) that the pruned standalone subset lacks, so
+# migrate would fail — or, without a local CLI at all, `npx prisma` would
+# download the latest major version, which can be incompatible with the
+# generated schema/client.
+COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
+RUN rm -rf node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 
 # Copy entrypoint script
 COPY docker-entrypoint.sh ./

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Icon } from '@iconify/react'
 import { Input } from '@/components/ui/input'
@@ -9,16 +9,29 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default function LicensePage() {
+  return (
+    <Suspense fallback={null}>
+      <LicenseForm />
+    </Suspense>
+  )
+}
+
+function LicenseForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const orgId = searchParams.get('org')
-  
+
   const [licenseKey, setLicenseKey] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
+  useEffect(() => {
+    if (!orgId) {
+      router.push('/auth/signin')
+    }
+  }, [orgId, router])
+
   if (!orgId) {
-    router.push('/auth/signin')
     return null
   }
 

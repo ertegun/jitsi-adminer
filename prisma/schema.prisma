@@ -1,12 +1,12 @@
 // Prisma schema for Jitsi Admin Panel
-// Supports both SQLite (dev) and MySQL (prod) with minimal changes
+// MySQL only (local dev uses docker-compose, see docker-compose.override.yml.example)
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -121,7 +121,7 @@ model Meeting {
   recurringGroupId String? // groups related recurring meetings
 
   // Advanced settings (JSON blob)
-  advancedSettings String @default("{}") // JSON: features + config overrides
+  advancedSettings String @db.Text // JSON: features + config overrides (always set explicitly; MySQL TEXT columns can't carry a DEFAULT)
 
   createdAt DateTime @default(now())
 
@@ -180,6 +180,6 @@ model AuditLog {
   targetType String // e.g., "Meeting", "ApiKey", "User"
   targetId   String
 
-  metadata   String   @default("{}") // JSON blob for additional context
+  metadata   String   @db.Text // JSON blob for additional context (always set explicitly; MySQL TEXT columns can't carry a DEFAULT)
   createdAt  DateTime @default(now())
 }

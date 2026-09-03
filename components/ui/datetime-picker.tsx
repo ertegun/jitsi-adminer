@@ -201,7 +201,6 @@ export function DateTimePicker({
             mode="single"
             selected={selectedDate}
             onSelect={handleDateSelect}
-            initialFocus
             locale={trLocale}
             className="mx-auto p-3 pb-2"
           />

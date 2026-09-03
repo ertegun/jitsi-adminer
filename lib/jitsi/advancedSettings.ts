@@ -25,6 +25,8 @@ export interface AdvancedMeetingSettings {
     disableChat: boolean
     disableReactions: boolean
     e2eeEnabled: boolean
+    // Lobby - enable waiting room for non-moderators
+    'lobby.enabled'?: boolean
   }
 }
 

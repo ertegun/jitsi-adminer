@@ -64,19 +64,24 @@ async function handleRoomCreated(event: any) {
     return
   }
 
-  // Create or update session
-  await prisma.meetingSession.upsert({
-    where: { 
-      meetingId: meeting.id,
-    },
-    update: {
-      actualStart: new Date(),
-    },
-    create: {
-      meetingId: meeting.id,
-      actualStart: new Date(),
-    },
+  // Create or update the currently-open session for this meeting
+  const openSession = await prisma.meetingSession.findFirst({
+    where: { meetingId: meeting.id, actualEnd: null },
   })
+
+  if (openSession) {
+    await prisma.meetingSession.update({
+      where: { id: openSession.id },
+      data: { actualStart: new Date() },
+    })
+  } else {
+    await prisma.meetingSession.create({
+      data: {
+        meetingId: meeting.id,
+        actualStart: new Date(),
+      },
+    })
+  }
 
   // Update meeting status to LIVE
   await prisma.meeting.update({
