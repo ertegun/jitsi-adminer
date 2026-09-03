@@ -14,6 +14,7 @@ export interface AdvancedMeetingSettings {
     livestreaming: boolean
     transcription: boolean
     outboundCall: boolean
+    screenSharing: boolean
   }
   
   // B) URL Config Parameters (appended as ?config.xxx=...)
@@ -38,6 +39,7 @@ export const DEFAULT_ADVANCED_SETTINGS: AdvancedMeetingSettings = {
     livestreaming: false,
     transcription: false,
     outboundCall: false,
+    screenSharing: true, // Allow screen sharing by default
   },
   config: {
     startWithAudioMuted: true,

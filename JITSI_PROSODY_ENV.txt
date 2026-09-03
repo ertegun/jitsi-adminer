@@ -1,0 +1,29 @@
+# ======================================
+# Jitsi Prosody için Gerekli Env Var'lar
+# ======================================
+# Bu değişkenler Jitsi Meet self-hosted deployment'ının
+# docker-compose.yml dosyasındaki "prosody" servisine eklenmeli.
+
+# 1. Reservation API'yi aktif et
+PROSODY_RESERVATION_ENABLED=1
+
+# 2. Backend URL'i belirt (admin panel'in public URL'i)
+PROSODY_RESERVATION_REST_BASE_URL=https://admin.gruparge.tr
+
+# 3. Lobby desteğini aç (XMPP_CONFIGURATION ile)
+# Not: Virgülle ayrılmış Lua config satırları
+XMPP_CONFIGURATION=reservations_enable_lobby_support = true
+
+# 4. Guest ve Lobby modüllerini aktif et
+ENABLE_GUESTS=1
+ENABLE_LOBBY=1
+
+# 5. JWT Auth (zaten var olmalı)
+ENABLE_AUTH=1
+AUTH_TYPE=jwt
+JWT_APP_ID=jitsi-e7e13546abbfed28
+JWT_APP_SECRET=<secret>
+XMPP_GUEST_DOMAIN=guest.meet.jitsi
+
+# 6. Lobby modülleri (XMPP_MODULES ile)
+XMPP_MODULES=muc_lobby_rooms,muc_wait_for_host,persistent_lobby

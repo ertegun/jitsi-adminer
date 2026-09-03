@@ -12,13 +12,16 @@ export interface JWTPayload {
     user?: {
       name?: string
       email?: string
-      affiliation?: 'owner'
+      affiliation?: 'owner' | 'member'
+      lobby_bypass?: boolean
+      security_bypass?: boolean
     }
     features?: {
       recording?: boolean
       livestreaming?: boolean
       transcription?: boolean
       'outbound-call'?: boolean
+      'screen-sharing'?: boolean
     }
   }
   // Legacy top-level claim, kept for older Jitsi deployments that still read
@@ -87,11 +90,12 @@ export function generateJitsiToken(params: GenerateTokenParams): string {
   // guests must be left with no affiliation or lobby-enabled meetings would
   // let them straight in.
   if (isModerator) {
-    // Moderators get full identity + owner affiliation
+    // Moderators get full identity + owner affiliation + lobby bypass
     payload.context.user = {
       ...(userName ? { name: userName } : {}),
       ...(userEmail ? { email: userEmail } : {}),
       affiliation: 'owner' as const,
+      lobby_bypass: true, // Moderators always bypass lobby
     }
   } else {
     // Guests: only add user object if we have identity info, and NEVER add affiliation
@@ -111,6 +115,7 @@ export function generateJitsiToken(params: GenerateTokenParams): string {
       livestreaming: advancedSettings.features.livestreaming,
       transcription: advancedSettings.features.transcription,
       'outbound-call': advancedSettings.features.outboundCall,
+      'screen-sharing': advancedSettings.features.screenSharing,
     }
   }
 

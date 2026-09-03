@@ -100,25 +100,12 @@ export default async function MeetingsPage() {
                   advancedSettings,
                 })
 
-                // Guest link (if HOST_GUEST mode)
+                // Guest link (if HOST_GUEST mode) - NO JWT for lobby to work
                 if (meeting.participantRoleMode === 'HOST_GUEST') {
-                  const guestToken = generateJitsiToken({
-                    jitsiDomain: org.jitsiDomain,
-                    jitsiAppId: org.jitsiAppId,
-                    jitsiAppSecret: org.jitsiAppSecret,
-                    roomName: meeting.roomName,
-                    isModerator: false,
-                    meeting: {
-                      scheduledStart: meeting.scheduledStart,
-                      scheduledEnd: meeting.scheduledEnd,
-                    },
-                    advancedSettings,
-                  })
-
                   guestLink = buildMeetingUrl({
                     jitsiDomain: org.jitsiDomain,
                     roomName: meeting.roomName,
-                    jwt: guestToken,
+                    // NO JWT - completely anonymous guest
                     advancedSettings,
                   })
                 }
