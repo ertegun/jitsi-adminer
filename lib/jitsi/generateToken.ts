@@ -13,6 +13,8 @@ export interface JWTPayload {
       name?: string
       email?: string
       affiliation?: 'owner'
+      // Lobby control for token_lobby_ondemand plugin
+      lobby?: boolean
     }
     features?: {
       recording?: boolean
@@ -40,6 +42,8 @@ export interface GenerateTokenParams {
     scheduledEnd: Date | null
   }
   advancedSettings?: AdvancedMeetingSettings
+  // Control lobby via JWT (requires token_lobby_ondemand Prosody plugin)
+  lobbyEnabled?: boolean
 }
 
 /**
@@ -63,6 +67,7 @@ export function generateJitsiToken(params: GenerateTokenParams): string {
     isModerator,
     meeting,
     advancedSettings,
+    lobbyEnabled,
   } = params
 
   const expiryDate = computeTokenExpiry(meeting)
@@ -92,16 +97,20 @@ export function generateJitsiToken(params: GenerateTokenParams): string {
       ...(userName ? { name: userName } : {}),
       ...(userEmail ? { email: userEmail } : {}),
       affiliation: 'owner' as const,
+      // Moderators bypass lobby (lobby: false or omit)
+      ...(lobbyEnabled ? { lobby: false } : {}),
     }
   } else {
     // Guests: only add user object if we have identity info, and NEVER add affiliation
-    if (userName || userEmail) {
+    if (userName || userEmail || lobbyEnabled) {
       payload.context.user = {
         ...(userName ? { name: userName } : {}),
         ...(userEmail ? { email: userEmail } : {}),
+        // Non-moderators subject to lobby when enabled
+        ...(lobbyEnabled ? { lobby: true } : {}),
       }
     }
-    // If no identity info, leave context.user undefined so Prosody treats as anonymous
+    // If no identity info and no lobby, leave context.user undefined so Prosody treats as anonymous
   }
 
   // Add feature flags from advanced settings

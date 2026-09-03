@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Icon } from '@iconify/react'
+import { useToast } from '@/hooks/use-toast'
 
 export default function MeetingDetailPage({
   params,
@@ -10,6 +11,7 @@ export default function MeetingDetailPage({
   params: Promise<{ id: string }>
 }) {
   const router = useRouter()
+  const { toast } = useToast()
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState<any>(null)
   const [error, setError] = useState('')
@@ -56,7 +58,11 @@ export default function MeetingDetailPage({
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)
-    alert('Kopyalandı!')
+    toast({
+      title: "✓ Kopyalandı!",
+      description: "Link panoya kopyalandı",
+      duration: 2000,
+    })
   }
 
   if (loading) {

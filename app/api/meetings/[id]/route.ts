@@ -53,12 +53,8 @@ export async function GET(
       ? mergeAdvancedSettings(JSON.parse(meeting.advancedSettings))
       : undefined
 
-    // Add lobby config if enabled
-    if (advancedSettings && meeting.lobbyEnabled) {
-      advancedSettings.config['lobby.enabled'] = true
-      // Require moderator to manually approve each guest (no auto-admit)
-      advancedSettings.config['lobby.autoKnock'] = false
-    }
+    // Lobby is now controlled via JWT context.user.lobby flag (token_lobby_ondemand plugin)
+    // No need for URL config parameters
 
     // Generate meeting links if Jitsi is connected
     let hostLink = null
@@ -85,6 +81,7 @@ export async function GET(
             scheduledEnd: meeting.scheduledEnd,
           },
           advancedSettings,
+          lobbyEnabled: meeting.lobbyEnabled, // JWT'de lobby control
         })
 
         hostLink = buildMeetingUrl({
@@ -94,16 +91,27 @@ export async function GET(
           advancedSettings,
         })
 
-        // Guest link (if HOST_GUEST mode). 
-        // For lobby to work properly with Prosody + JWT auth, guest links must
-        // be COMPLETELY ANONYMOUS (no JWT token at all). JWT-authenticated users
-        // bypass the lobby regardless of affiliation. Only anonymous users are
-        // held in the lobby waiting for a moderator.
+        // Guest link (if HOST_GUEST mode).
+        // With token_lobby_ondemand plugin, we control lobby via JWT context.user.lobby flag
         if (meeting.participantRoleMode === 'HOST_GUEST') {
+          const guestToken = generateJitsiToken({
+            jitsiDomain: org.jitsiDomain,
+            jitsiAppId: org.jitsiAppId,
+            jitsiAppSecret: org.jitsiAppSecret,
+            roomName: meeting.roomName,
+            isModerator: false,
+            meeting: {
+              scheduledStart: meeting.scheduledStart,
+              scheduledEnd: meeting.scheduledEnd,
+            },
+            advancedSettings,
+            lobbyEnabled: meeting.lobbyEnabled, // JWT'de lobby control
+          })
+
           guestLink = buildMeetingUrl({
             jitsiDomain: org.jitsiDomain,
             roomName: meeting.roomName,
-            // NO jwt parameter - guests are anonymous
+            jwt: guestToken, // Guest now has JWT with lobby flag
             advancedSettings,
           })
         }

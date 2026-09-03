@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Nunito } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Providers } from "@/components/Providers";
+import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
 
 const nunito = Nunito({
@@ -25,6 +26,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col font-sans">
         <Providers>
           <TooltipProvider>{children}</TooltipProvider>
+          <Toaster />
         </Providers>
       </body>
     </html>
