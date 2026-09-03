@@ -3,9 +3,11 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Icon } from '@iconify/react'
+import { useToast } from '@/hooks/use-toast'
 
 export default function JitsiSettingsPage() {
   const router = useRouter()
+  const { toast } = useToast()
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState<any>(null)
   const [error, setError] = useState('')
@@ -243,7 +245,11 @@ ENABLE_GUESTS=0`}</pre>
                   navigator.clipboard.writeText(
                     `ENABLE_AUTH=1\nAUTH_TYPE=jwt\nJWT_APP_ID=${organization.jitsiAppId}\nJWT_APP_SECRET=${organization.jitsiAppSecret}\nENABLE_GUESTS=0`
                   )
-                  alert('Kopyalandı!')
+                  toast({
+                    title: "✓ Kopyalandı!",
+                    description: "Jitsi yapılandırması panoya kopyalandı",
+                    duration: 2000,
+                  })
                 }}
                 className="px-4 py-2 bg-gray-700 text-primary-foreground rounded-md hover:bg-gray-800 flex items-center gap-2"
               >

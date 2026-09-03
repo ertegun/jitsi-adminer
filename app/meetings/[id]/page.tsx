@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Icon } from '@iconify/react'
 import { useToast } from '@/hooks/use-toast'
+import { ClientLayoutWrapper } from '@/components/ClientLayoutWrapper'
 
 export default function MeetingDetailPage({
   params,
@@ -341,7 +342,11 @@ export default function MeetingDetailPage({
                   onClick={() => {
                     if (confirm('Toplantıyı iptal etmek istediğinizden emin misiniz?')) {
                       // TODO: Cancel meeting API
-                      alert('İptal fonksiyonu yakında eklenecek')
+                      toast({
+                        title: "ℹ Bilgi",
+                        description: "İptal fonksiyonu yakında eklenecek",
+                        duration: 3000,
+                      })
                     }
                   }}
                   className="block w-full px-4 py-2 border border-red-300 text-destructive text-center rounded hover:bg-destructive/10 flex items-center justify-center gap-2"

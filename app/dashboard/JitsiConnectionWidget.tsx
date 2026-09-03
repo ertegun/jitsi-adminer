@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Icon } from '@iconify/react'
+import { useToast } from '@/hooks/use-toast'
 
 export default function JitsiConnectionWidget({ 
   organization 
@@ -15,6 +16,7 @@ export default function JitsiConnectionWidget({
   }
 }) {
   const router = useRouter()
+  const { toast } = useToast()
   const [testing, setTesting] = useState(false)
 
   const handleTest = async () => {
@@ -24,15 +26,35 @@ export default function JitsiConnectionWidget({
     form.append('organizationId', organization.id)
     
     try {
-      await fetch('/api/settings/jitsi/test', {
+      const response = await fetch('/api/settings/jitsi/test', {
         method: 'POST',
         body: form,
       })
       
+      if (!response.ok) {
+        toast({
+          title: "✗ Test Başarısız",
+          description: "Jitsi sunucu bağlantısı test edilemedi",
+          variant: "destructive",
+          duration: 3000,
+        })
+      } else {
+        toast({
+          title: "✓ Test Başarılı",
+          description: "Jitsi sunucu bağlantısı doğrulandı",
+          duration: 2000,
+        })
+      }
+      
       // Refresh page data
       router.refresh()
     } catch (error) {
-      alert('Test başarısız')
+      toast({
+        title: "✗ Test Başarısız",
+        description: "Bağlantı hatası oluştu",
+        variant: "destructive",
+        duration: 3000,
+      })
     } finally {
       setTesting(false)
     }
