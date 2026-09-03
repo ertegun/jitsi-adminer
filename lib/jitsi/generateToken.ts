@@ -12,6 +12,7 @@ export interface JWTPayload {
     user?: {
       name?: string
       email?: string
+      affiliation?: 'owner'
     }
     features?: {
       recording?: boolean
@@ -20,6 +21,9 @@ export interface JWTPayload {
       'outbound-call'?: boolean
     }
   }
+  // Legacy top-level claim, kept for older Jitsi deployments that still read
+  // it. Modern self-hosted Jitsi (jicofo/prosody) reads context.user.affiliation
+  // instead — see below.
   moderator?: string
 }
 
@@ -74,12 +78,30 @@ export function generateJitsiToken(params: GenerateTokenParams): string {
     moderator: isModerator ? 'true' : undefined,
   }
 
-  // Add user identity if provided (host links have this, guest links may not)
-  if (userName || userEmail) {
+  // Add user identity if provided (host links have this, guest links may not).
+  // affiliation is what self-hosted Jitsi (jicofo/prosody) uses to grant
+  // moderator rights — but it ALSO makes mod_muc_lobby_rooms bypass the lobby
+  // for anyone with an affiliation other than 'none' (see
+  // resources/prosody-plugins/mod_muc_lobby_rooms.lua: only occupants with no
+  // affiliation get sent to the lobby). So we only set it for moderators;
+  // guests must be left with no affiliation or lobby-enabled meetings would
+  // let them straight in.
+  if (isModerator) {
+    // Moderators get full identity + owner affiliation
     payload.context.user = {
-      name: userName,
-      email: userEmail,
+      ...(userName ? { name: userName } : {}),
+      ...(userEmail ? { email: userEmail } : {}),
+      affiliation: 'owner' as const,
     }
+  } else {
+    // Guests: only add user object if we have identity info, and NEVER add affiliation
+    if (userName || userEmail) {
+      payload.context.user = {
+        ...(userName ? { name: userName } : {}),
+        ...(userEmail ? { email: userEmail } : {}),
+      }
+    }
+    // If no identity info, leave context.user undefined so Prosody treats as anonymous
   }
 
   // Add feature flags from advanced settings
