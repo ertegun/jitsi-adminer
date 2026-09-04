@@ -8,7 +8,8 @@ const nextConfig: NextConfig = {
     '192.168.20.2',
     '*.gruparge.tr',
     '*.gruparge.com',
-    // add your NPM domain here, e.g. 'admin.gruparge.tr'
+    '2.netvar.org',
+    '*.netvar.org',
   ],
   experimental: {
     serverActions: {
@@ -18,6 +19,8 @@ const nextConfig: NextConfig = {
         '192.168.20.2:8080',
         '*.gruparge.tr',
         '*.gruparge.com',
+        '2.netvar.org',
+        '*.netvar.org',
       ],
     },
   },

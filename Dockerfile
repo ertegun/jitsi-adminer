@@ -7,7 +7,7 @@ WORKDIR /app
 # Copy package files and Prisma schema (needed for postinstall's `prisma generate`)
 COPY package.json package-lock.json* ./
 COPY prisma ./prisma
-RUN npm ci --legacy-peer-deps
+RUN --mount=type=cache,target=/root/.npm npm ci --legacy-peer-deps
 
 # Stage 2: Builder
 FROM node:20-alpine AS builder
@@ -22,7 +22,7 @@ RUN npx prisma generate
 
 # Build Next.js app
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN npm run build
+RUN --mount=type=cache,target=/app/.next/cache npm run build
 
 # Stage 3: Runner
 FROM node:20-alpine AS runner

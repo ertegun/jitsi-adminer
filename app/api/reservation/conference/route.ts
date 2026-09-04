@@ -60,8 +60,8 @@ export async function POST(request: NextRequest) {
         mail_owner: mailOwner || meeting.organization.slug,
         start_time: scheduledStart.toISOString(),
         duration: durationSeconds,
-        // ⬇ Per-meeting lobby control — requires
-        //   reservations_enable_lobby_support = true in Prosody
+        // With mod_token_lobby_ondemand plugin, lobby can be pre-enabled and
+        // moderators (affiliation=owner) will bypass it automatically.
         lobby: meeting.lobbyEnabled,
       },
       { status: 200 }

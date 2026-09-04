@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth/auth'
 import { prisma } from '@/lib/db/prisma'
+import { absoluteUrl } from '@/lib/utils/request-url'
 
 export async function POST(request: NextRequest) {
   try {
     const session = await auth()
     if (!session?.user) {
-      return NextResponse.redirect(new URL('/auth/signin', request.url))
+      return NextResponse.redirect(absoluteUrl('/auth/signin', request))
     }
 
     const formData = await request.formData()
@@ -64,7 +65,8 @@ export async function POST(request: NextRequest) {
         })
 
         return NextResponse.redirect(
-          new URL('/settings/jitsi?success=connected', request.url)
+          absoluteUrl('/settings/jitsi?success=connected', request),
+          { status: 303 }
         )
       } else {
         throw new Error(`HTTP ${response.status}`)
@@ -79,10 +81,11 @@ export async function POST(request: NextRequest) {
       })
 
       return NextResponse.redirect(
-        new URL(
+        absoluteUrl(
           `/settings/jitsi?error=${encodeURIComponent('Bağlantı başarısız: ' + (error as Error).message)}`,
-          request.url
-        )
+          request
+        ),
+        { status: 303 }
       )
     }
   } catch (error) {

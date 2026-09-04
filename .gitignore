@@ -49,3 +49,8 @@ dev.db-journal
 
 # docker
 docker-compose.override.yml
+
+# Debug/test artifacts (Jitsi JWT development)
+decode-real-jwt.js
+test-jwt-manual.js
+temp_backup/

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth/auth'
 import { prisma } from '@/lib/db/prisma'
+import { absoluteUrl } from '@/lib/utils/request-url'
 import crypto from 'crypto'
 import { z } from 'zod'
 
@@ -13,7 +14,7 @@ export async function POST(request: NextRequest) {
   try {
     const session = await auth()
     if (!session?.user) {
-      return NextResponse.redirect(new URL('/auth/signin', request.url))
+      return NextResponse.redirect(absoluteUrl('/auth/signin', request))
     }
 
     const formData = await request.formData()
@@ -105,7 +106,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    return NextResponse.redirect(new URL('/dashboard?jitsi=configured', request.url))
+    return NextResponse.redirect(absoluteUrl('/dashboard?jitsi=configured', request))
   } catch (error) {
     if (error instanceof z.ZodError) {
       return new NextResponse(error.errors[0].message, { status: 400 })

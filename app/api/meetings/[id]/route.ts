@@ -76,6 +76,7 @@ export async function GET(
           userName: meeting.createdBy.name || undefined,
           userEmail: meeting.createdBy.email,
           isModerator: true,
+          lobbyEnabled: meeting.lobbyEnabled,
           meeting: {
             scheduledStart: meeting.scheduledStart,
             scheduledEnd: meeting.scheduledEnd,

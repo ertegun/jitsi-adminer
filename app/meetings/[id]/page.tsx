@@ -133,6 +133,10 @@ export default function MeetingDetailPage({
     )
   }
 
+  if (!data) {
+    return null
+  }
+
   const { meeting, hostLink, guestLink } = data
 
   return (
