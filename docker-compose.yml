@@ -10,8 +10,8 @@ services:
       MYSQL_DATABASE: ${DB_NAME:-jitsi_admin}
       MYSQL_USER: ${DB_USER:-jitsi_admin}
       MYSQL_PASSWORD: ${DB_PASSWORD:-jitsi_admin_password}
-    ports:
-      - "${DB_PORT:-3306}:3306"
+    # ports:
+    # - "${DB_PORT:-3306}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
