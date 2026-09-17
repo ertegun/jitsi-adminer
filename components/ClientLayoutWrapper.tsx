@@ -3,6 +3,7 @@
 import { ReactNode, useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { DashboardLayout } from '@/components/DashboardLayout'
+import type { OrganizationOption } from '@/components/AppSidebar'
 
 interface ClientLayoutWrapperProps {
   children: ReactNode
@@ -11,6 +12,7 @@ interface ClientLayoutWrapperProps {
 export function ClientLayoutWrapper({ children }: ClientLayoutWrapperProps) {
   const { data: session } = useSession()
   const [orgName, setOrgName] = useState<string>('')
+  const [organizations, setOrganizations] = useState<OrganizationOption[]>([])
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
 
   useEffect(() => {
@@ -20,6 +22,7 @@ export function ClientLayoutWrapper({ children }: ClientLayoutWrapperProps) {
         if (res.ok) {
           const data = await res.json()
           setOrgName(data.organizationName || '')
+          setOrganizations(data.organizations || [])
           setIsSuperAdmin(data.isSuperAdmin || false)
         }
       } catch (error) {
@@ -37,9 +40,10 @@ export function ClientLayoutWrapper({ children }: ClientLayoutWrapperProps) {
   }
 
   return (
-    <DashboardLayout 
+    <DashboardLayout
       user={session.user}
       organizationName={orgName}
+      organizations={organizations}
       isSuperAdmin={isSuperAdmin}
     >
       {children}

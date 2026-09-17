@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth/auth'
 import { prisma } from '@/lib/db/prisma'
 import { isSuperAdmin } from '@/lib/auth/superAdmin'
+import { getCurrentMembership, listUserOrganizations } from '@/lib/auth/orgMembership'
 import { DashboardLayout } from '@/components/DashboardLayout'
 import Link from 'next/link'
 
@@ -12,22 +13,20 @@ export default async function MeetingsPage() {
     redirect('/auth/signin')
   }
 
-  // Check if user is super admin
-  const isSuperAdminUser = await isSuperAdmin()
+  const current = await getCurrentMembership()
 
-  // Get user's first organization
-  const membership = await prisma.organizationMember.findFirst({
-    where: { userId: session.user.id },
-    include: {
-      organization: true,
-    },
-  })
-
-  if (!membership) {
+  if (!current) {
     redirect('/dashboard')
   }
 
-  const org = membership.organization
+  const { membership } = current
+
+  // Check if user is super admin
+  const isSuperAdminUser = await isSuperAdmin()
+
+  const org = await prisma.organization.findUniqueOrThrow({
+    where: { id: membership.organizationId },
+  })
 
   // Get all meetings for this organization
   const meetings = await prisma.meeting.findMany({
@@ -49,10 +48,21 @@ export default async function MeetingsPage() {
   const ended = meetings.filter((m) => m.status === 'ENDED')
   const cancelled = meetings.filter((m) => m.status === 'CANCELLED')
 
+  const orgList = await listUserOrganizations()
+  const organizations = orgList
+    ? orgList.memberships.map((m) => ({
+        id: m.organizationId,
+        name: m.organization.name,
+        role: m.role,
+        isActive: m.organizationId === org.id,
+      }))
+    : []
+
   return (
-    <DashboardLayout 
-      user={session.user} 
+    <DashboardLayout
+      user={session.user}
       organizationName={org.name}
+      organizations={organizations}
       isSuperAdmin={isSuperAdminUser}
     >
       <div className="space-y-6">

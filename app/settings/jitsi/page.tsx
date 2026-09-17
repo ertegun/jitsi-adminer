@@ -27,6 +27,7 @@ export default function JitsiSettingsPage() {
   const [data, setData] = useState<JitsiStatusResponse | null>(null)
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
+  const [credentialMode, setCredentialMode] = useState<'auto' | 'manual'>('auto')
 
   const fetchData = useCallback(async () => {
     try {
@@ -76,19 +77,17 @@ export default function JitsiSettingsPage() {
 
   return (
     <ClientLayoutWrapper>
-      <div className="min-h-screen bg-background">
-        <header className="bg-card shadow">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-foreground">Jitsi Sunucu Ayarları</h1>
-              <Link href="/dashboard" className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">
-                <Icon icon="mdi:arrow-left" className="w-4 h-4" /> Dashboard&apos;a Dön
-              </Link>
-            </div>
+      <div className="max-w-4xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Jitsi Sunucu Ayarları</h1>
           </div>
-        </header>
+          <Link href="/dashboard" className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">
+            <Icon icon="mdi:arrow-left" className="w-4 h-4" /> Dashboard&apos;a Dön
+          </Link>
+        </div>
 
-        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div>
           {loading && (
             <div className="min-h-[40vh] flex items-center justify-center">
               <p>Yükleniyor...</p>
@@ -199,16 +198,87 @@ export default function JitsiSettingsPage() {
                         </p>
                       </div>
 
+                      <div>
+                        <label className="block text-sm font-medium text-foreground mb-2">
+                          App ID / App Secret
+                        </label>
+                        <div className="flex gap-4 mb-4">
+                          <label className="flex items-center gap-2 text-sm text-foreground">
+                            <input
+                              type="radio"
+                              name="credentialMode"
+                              value="auto"
+                              checked={credentialMode === 'auto'}
+                              onChange={() => setCredentialMode('auto')}
+                            />
+                            Otomatik oluştur
+                          </label>
+                          <label className="flex items-center gap-2 text-sm text-foreground">
+                            <input
+                              type="radio"
+                              name="credentialMode"
+                              value="manual"
+                              checked={credentialMode === 'manual'}
+                              onChange={() => setCredentialMode('manual')}
+                            />
+                            Mevcut Jitsi sunucumun bilgilerini gir
+                          </label>
+                        </div>
+
+                        {credentialMode === 'manual' && (
+                          <div className="space-y-4 bg-background rounded-md p-4 border border-border">
+                            <div>
+                              <label htmlFor="jitsiAppId" className="block text-sm font-medium text-foreground mb-1">
+                                App ID
+                              </label>
+                              <input
+                                type="text"
+                                id="jitsiAppId"
+                                name="jitsiAppId"
+                                defaultValue={data.organization.jitsiAppId || ''}
+                                placeholder="jitsi-xxxxxxxx"
+                                className="block w-full px-3 py-2 border border-border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+                              />
+                            </div>
+                            <div>
+                              <label htmlFor="jitsiAppSecret" className="block text-sm font-medium text-foreground mb-1">
+                                App Secret
+                              </label>
+                              <input
+                                type="text"
+                                id="jitsiAppSecret"
+                                name="jitsiAppSecret"
+                                defaultValue={data.organization.jitsiAppSecret || ''}
+                                placeholder="Jitsi sunucunuzdaki JWT_APP_SECRET değeri"
+                                className="block w-full px-3 py-2 border border-border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+                              />
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              Jitsi sunucunuzda zaten JWT auth yapılandırılmışsa, oradaki JWT_APP_ID ve JWT_APP_SECRET
+                              değerlerini buraya girin. Panel bu değerleri değiştirmeden kullanacaktır.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
                       <div className="bg-chart-3/10 border border-blue-200 rounded-lg p-4">
                         <h3 className="text-sm font-semibold text-blue-900 mb-2 flex items-center gap-2">
                           <Icon icon="mdi:lightbulb-outline" className="w-5 h-5" /> Nasıl Çalışır?
                         </h3>
-                        <ol className="text-sm text-blue-800 space-y-2 list-decimal list-inside">
-                          <li>Jitsi domain&apos;inizi girin ve kaydedin</li>
-                          <li>Sistem sizin için otomatik App ID ve App Secret üretir</li>
-                          <li>Bu değerleri Jitsi sunucunuzun ortam değişkenlerine ekleyin</li>
-                          <li>&quot;Bağlantıyı Test Et&quot; ile doğrulayın</li>
-                        </ol>
+                        {credentialMode === 'auto' ? (
+                          <ol className="text-sm text-blue-800 space-y-2 list-decimal list-inside">
+                            <li>Jitsi domain&apos;inizi girin ve kaydedin</li>
+                            <li>Sistem sizin için otomatik App ID ve App Secret üretir</li>
+                            <li>Bu değerleri Jitsi sunucunuzun ortam değişkenlerine ekleyin</li>
+                            <li>&quot;Bağlantıyı Test Et&quot; ile doğrulayın</li>
+                          </ol>
+                        ) : (
+                          <ol className="text-sm text-blue-800 space-y-2 list-decimal list-inside">
+                            <li>Jitsi sunucunuzda daha önce ayarladığınız App ID ve App Secret&apos;i girin</li>
+                            <li>Panel bu sunucuyu, aynı kimlik bilgileriyle kullanmaya başlar</li>
+                            <li>&quot;Bağlantıyı Test Et&quot; ile doğrulayın</li>
+                          </ol>
+                        )}
                       </div>
 
                       <div className="flex gap-4">
@@ -289,7 +359,7 @@ ENABLE_GUESTS=0`}</pre>
               </div>
             </>
           )}
-        </main>
+        </div>
       </div>
     </ClientLayoutWrapper>
   )

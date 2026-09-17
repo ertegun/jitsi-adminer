@@ -8,7 +8,13 @@ import { z } from 'zod'
 const configureSchema = z.object({
   organizationId: z.string(),
   jitsiDomain: z.string().url('Geçerli bir URL giriniz'),
-})
+  credentialMode: z.enum(['auto', 'manual']).default('auto'),
+  jitsiAppId: z.string().optional(),
+  jitsiAppSecret: z.string().optional(),
+}).refine(
+  (data) => data.credentialMode !== 'manual' || (data.jitsiAppId && data.jitsiAppSecret),
+  { message: 'Mevcut App ID ve App Secret bilgilerini giriniz', path: ['jitsiAppId'] }
+)
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,6 +26,9 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData()
     let jitsiDomain = formData.get('jitsiDomain') as string
     const organizationId = formData.get('organizationId') as string
+    const credentialMode = (formData.get('credentialMode') as string) || 'auto'
+    const manualAppId = (formData.get('jitsiAppId') as string) || undefined
+    const manualAppSecret = (formData.get('jitsiAppSecret') as string) || undefined
 
     // Add https:// if not present
     if (jitsiDomain && !jitsiDomain.startsWith('http://') && !jitsiDomain.startsWith('https://')) {
@@ -29,6 +38,9 @@ export async function POST(request: NextRequest) {
     const data = {
       organizationId,
       jitsiDomain,
+      credentialMode,
+      jitsiAppId: manualAppId,
+      jitsiAppSecret: manualAppSecret,
     }
 
     const validated = configureSchema.parse(data)
@@ -47,11 +59,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Clean domain (remove protocol and trailing slash)
-    let cleanDomain = validated.jitsiDomain
+    const cleanDomain = validated.jitsiDomain
       .replace(/^https?:\/\//, '')
       .replace(/\/$/, '')
 
-    // Generate App ID and Secret if not exists
     const org = await prisma.organization.findUnique({
       where: { id: validated.organizationId },
     })
@@ -59,7 +70,11 @@ export async function POST(request: NextRequest) {
     let appId = org?.jitsiAppId
     let appSecret = org?.jitsiAppSecret
 
-    if (!appId || !appSecret) {
+    if (validated.credentialMode === 'manual') {
+      // User already has a Jitsi server configured with these credentials — use them as-is
+      appId = validated.jitsiAppId
+      appSecret = validated.jitsiAppSecret
+    } else if (!appId || !appSecret) {
       // Generate new credentials
       appId = `jitsi-${crypto.randomBytes(8).toString('hex')}`
       appSecret = crypto.randomBytes(32).toString('base64')

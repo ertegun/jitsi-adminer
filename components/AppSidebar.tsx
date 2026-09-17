@@ -1,8 +1,9 @@
 'use client'
 
+import { useState } from 'react'
 import { Icon } from '@iconify/react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 import {
   Sidebar,
@@ -16,6 +17,14 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+
+export type OrganizationOption = {
+  id: string
+  name: string
+  role: string
+  isActive: boolean
+}
 
 interface AppSidebarProps {
   user?: {
@@ -23,11 +32,31 @@ interface AppSidebarProps {
     email?: string | null
   }
   organizationName?: string
+  organizations?: OrganizationOption[]
   isSuperAdmin?: boolean
 }
 
-export function AppSidebar({ user, organizationName, isSuperAdmin }: AppSidebarProps) {
+export function AppSidebar({ user, organizationName, organizations, isSuperAdmin }: AppSidebarProps) {
   const pathname = usePathname()
+  const router = useRouter()
+  const [switching, setSwitching] = useState(false)
+
+  const handleSwitchOrganization = async (organizationId: string) => {
+    setSwitching(true)
+    try {
+      const res = await fetch('/api/user/organization/active', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ organizationId }),
+      })
+      if (res.ok) {
+        router.refresh()
+        window.location.reload()
+      }
+    } finally {
+      setSwitching(false)
+    }
+  }
 
   const mainMenuItems = [
     {
@@ -52,6 +81,16 @@ export function AppSidebar({ user, organizationName, isSuperAdmin }: AppSidebarP
       title: 'Jitsi Ayarları',
       url: '/settings/jitsi',
       icon: 'mdi:cog',
+    },
+    {
+      title: 'Üyeler',
+      url: '/settings/members',
+      icon: 'mdi:account-multiple-outline',
+    },
+    {
+      title: 'API Anahtarları',
+      url: '/settings/api-keys',
+      icon: 'mdi:key-variant',
     },
   ]
 
@@ -97,6 +136,27 @@ export function AppSidebar({ user, organizationName, isSuperAdmin }: AppSidebarP
             )}
           </div>
         </div>
+
+        {organizations && organizations.length > 1 && (
+          <div className="mt-3">
+            <Select
+              value={organizations.find((o) => o.isActive)?.id}
+              onValueChange={handleSwitchOrganization}
+              disabled={switching}
+            >
+              <SelectTrigger className="w-full" size="sm">
+                <SelectValue placeholder="Organizasyon seç" />
+              </SelectTrigger>
+              <SelectContent>
+                {organizations.map((org) => (
+                  <SelectItem key={org.id} value={org.id}>
+                    {org.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </SidebarHeader>
 
       <SidebarContent>

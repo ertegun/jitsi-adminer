@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth/auth'
 import { prisma } from '@/lib/db/prisma'
+import { getCurrentMembership } from '@/lib/auth/orgMembership'
 import { z } from 'zod'
 import crypto from 'crypto'
 
@@ -40,26 +41,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get user's first organization
-    const membership = await prisma.organizationMember.findFirst({
-      where: { userId: session.user.id },
-      include: {
-        organization: {
-          include: {
-            license: true,
-          },
-        },
-      },
-    })
+    const current = await getCurrentMembership()
 
-    if (!membership) {
+    if (!current) {
       return NextResponse.json(
         { error: 'Organizasyon bulunamadı' },
         { status: 404 }
       )
     }
 
-    const org = membership.organization
+    const org = await prisma.organization.findUniqueOrThrow({
+      where: { id: current.membership.organizationId },
+      include: { license: true },
+    })
 
     // Check license
     if (!org.license || org.license.status !== 'ACTIVE') {
@@ -70,7 +64,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user can create meetings
-    if (!['OWNER', 'ADMIN', 'HOST'].includes(membership.role)) {
+    if (!['OWNER', 'ADMIN', 'HOST'].includes(current.membership.role)) {
       return NextResponse.json(
         { error: 'Toplantı oluşturma yetkiniz yok' },
         { status: 403 }

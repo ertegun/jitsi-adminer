@@ -1,35 +1,30 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@/lib/auth/auth'
 import { prisma } from '@/lib/db/prisma'
+import { getCurrentMembership } from '@/lib/auth/orgMembership'
 
 export async function GET() {
   try {
-    const session = await auth()
-    
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const current = await getCurrentMembership()
 
-    // Get user's first organization
-    const membership = await prisma.organizationMember.findFirst({
-      where: { userId: session.user.id },
-      include: {
-        organization: {
-          include: {
-            license: true,
-          },
-        },
-      },
-    })
-
-    if (!membership) {
+    if (!current) {
       return NextResponse.json(
         { error: 'Organizasyon bulunamadı' },
         { status: 404 }
       )
     }
 
-    const org = membership.organization
+    const { membership } = current
+
+    const org = await prisma.organization.findUnique({
+      where: { id: membership.organizationId },
+    })
+
+    if (!org) {
+      return NextResponse.json(
+        { error: 'Organizasyon bulunamadı' },
+        { status: 404 }
+      )
+    }
 
     // Check if user can manage Jitsi settings
     const canManage = ['OWNER', 'ADMIN'].includes(membership.role)
@@ -40,7 +35,8 @@ export async function GET() {
         name: org.name,
         jitsiDomain: org.jitsiDomain,
         jitsiAppId: org.jitsiAppId,
-        jitsiAppSecret: org.jitsiAppSecret,
+        // Only OWNER/ADMIN may see the secret — other members just see connection status
+        jitsiAppSecret: canManage ? org.jitsiAppSecret : null,
         jitsiConnectionStatus: org.jitsiConnectionStatus,
       },
       canManage,

@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth/auth'
 import { prisma } from '@/lib/db/prisma'
 import { isSuperAdmin } from '@/lib/auth/superAdmin'
+import { getCurrentMembership, listUserOrganizations } from '@/lib/auth/orgMembership'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { DashboardLayout } from '@/components/DashboardLayout'
@@ -20,19 +21,9 @@ export default async function DashboardPage() {
   // Check if user is super admin
   const isSuperAdminUser = await isSuperAdmin()
 
-  // Get user's organizations
-  const memberships = await prisma.organizationMember.findMany({
-    where: { userId: session.user.id },
-    include: {
-      organization: {
-        include: {
-          license: true,
-        },
-      },
-    },
-  })
+  const current = await getCurrentMembership()
 
-  if (memberships.length === 0) {
+  if (!current) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Card className="max-w-md">
@@ -45,7 +36,10 @@ export default async function DashboardPage() {
     )
   }
 
-  const firstOrg = memberships[0].organization
+  const firstOrg = await prisma.organization.findUniqueOrThrow({
+    where: { id: current.membership.organizationId },
+    include: { license: true },
+  })
   const license = firstOrg.license
 
   // Check license status
@@ -65,10 +59,21 @@ export default async function DashboardPage() {
     },
   })
 
+  const orgList = await listUserOrganizations()
+  const organizations = orgList
+    ? orgList.memberships.map((m) => ({
+        id: m.organizationId,
+        name: m.organization.name,
+        role: m.role,
+        isActive: m.organizationId === firstOrg.id,
+      }))
+    : []
+
   return (
-    <DashboardLayout 
-      user={session.user} 
+    <DashboardLayout
+      user={session.user}
       organizationName={firstOrg.name}
+      organizations={organizations}
       isSuperAdmin={isSuperAdminUser}
     >
       <div className="space-y-6">

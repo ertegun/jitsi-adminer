@@ -34,6 +34,7 @@ model Organization {
   // Relations
   license            License?
   members            OrganizationMember[]
+  invites            OrganizationInvite[]
   apiKeys            ApiKey[]
   meetings           Meeting[]
   auditLogs          AuditLog[]
@@ -53,15 +54,17 @@ model License {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String
-  name         String?
-  isSuperAdmin Boolean  @default(false) // System-wide admin access
-  createdAt    DateTime @default(now())
+  id                 String   @id @default(cuid())
+  email              String   @unique
+  passwordHash       String
+  name               String?
+  isSuperAdmin       Boolean  @default(false) // System-wide admin access
+  activeOrganizationId String? // which organization this user is currently viewing (they may belong to several)
+  createdAt          DateTime @default(now())
 
   // Relations
   organizations  OrganizationMember[]
+  sentInvites    OrganizationInvite[]
   createdMeetings Meeting[]
   apiKeysCreated ApiKey[]
   auditLogs      AuditLog[]
@@ -79,12 +82,33 @@ model OrganizationMember {
   @@unique([userId, organizationId])
 }
 
+model OrganizationInvite {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  email       String
+  role        String    // ADMIN, HOST, VIEWER (OWNER cannot be granted via invite)
+  token       String    @unique
+  status      String    @default("PENDING") // PENDING, ACCEPTED, REVOKED
+  expiresAt   DateTime
+
+  invitedById String
+  invitedBy   User      @relation(fields: [invitedById], references: [id])
+
+  createdAt   DateTime  @default(now())
+  acceptedAt  DateTime?
+
+  @@index([organizationId])
+}
+
 model ApiKey {
   id             String    @id @default(cuid())
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   name        String
+  keyPrefix   String   @default("") // first chars of the key, shown in UI so a key can be recognized without exposing it
   keyHash     String   @unique // hashed API secret
   createdBy   String
   creator     User     @relation(fields: [createdBy], references: [id])

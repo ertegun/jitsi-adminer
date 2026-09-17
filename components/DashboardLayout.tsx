@@ -1,7 +1,7 @@
 'use client'
 
-import { ReactNode, useEffect, useState } from 'react'
-import { AppSidebar } from '@/components/AppSidebar'
+import { ReactNode } from 'react'
+import { AppSidebar, type OrganizationOption } from '@/components/AppSidebar'
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar'
 import { Separator } from '@/components/ui/separator'
 
@@ -12,13 +12,14 @@ interface DashboardLayoutProps {
     email?: string | null
   }
   organizationName?: string
+  organizations?: OrganizationOption[]
   isSuperAdmin?: boolean
 }
 
-export function DashboardLayout({ children, user, organizationName, isSuperAdmin }: DashboardLayoutProps) {
+export function DashboardLayout({ children, user, organizationName, organizations, isSuperAdmin }: DashboardLayoutProps) {
   return (
     <SidebarProvider>
-      <AppSidebar user={user} organizationName={organizationName} isSuperAdmin={isSuperAdmin} />
+      <AppSidebar user={user} organizationName={organizationName} organizations={organizations} isSuperAdmin={isSuperAdmin} />
       <SidebarInset>
         <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b border-border bg-background px-4">
           <SidebarTrigger className="-ml-1" />

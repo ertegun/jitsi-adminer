@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `ApiKey` ADD COLUMN `keyPrefix` VARCHAR(191) NOT NULL DEFAULT '';
