@@ -3,6 +3,7 @@
 import { Icon } from '@iconify/react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { signOut } from 'next-auth/react'
 import {
   Sidebar,
   SidebarContent,
@@ -168,13 +169,12 @@ export function AppSidebar({ user, organizationName, isSuperAdmin }: AppSidebarP
             </div>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <form action="/api/auth/signout" method="POST" className="w-full">
-                <button type="submit" className="flex items-center gap-2 w-full">
-                  <Icon icon="mdi:logout" className="w-4 h-4" />
-                  <span>Çıkış Yap</span>
-                </button>
-              </form>
+            <SidebarMenuButton
+              onClick={() => signOut({ callbackUrl: '/auth/signin' })}
+              className="flex items-center gap-2 w-full"
+            >
+              <Icon icon="mdi:logout" className="w-4 h-4" />
+              <span>Çıkış Yap</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
